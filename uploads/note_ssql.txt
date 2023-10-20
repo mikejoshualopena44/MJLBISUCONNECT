@@ -1,0 +1,144 @@
+sourcecode:
+https://drive.google.com/file/d/1zTZVehQs24ZLKtD-IKWGhCIUYS8N5TPN/view
+
+INSERT INTO users (stud_ID,firstName,LastName,email,password,url_address) 
+VALUES(320094,'Mike','Lopena','mike@bisu.edu.ph','wqewqrrerwe','https://bisuconnect.com/mike');
+
+Part 34-//Login class
+
+echo $ROW_user['firstName']// get the array or the user_DB
+echo $ROW['post'] //get the array of post_DB
+echo $FRIEND_ROW['firstName']// get all user except the login user
+
+//Part 52: problem[ the change photo page disfunction display got deformed ]
+
+------
+<?php
+  session_start();
+
+  //print_r($_SESSION);
+  include ("classes/connection.php");
+  include ("classes/C_login.php");
+  include ("classes/C_user.php");
+  include ("classes/C_post.php");
+
+	$login = new Login();
+	$user_data = $login->check_login($_SESSION['Bisuconnect_stud_ID']);
+ 
+	//posting starts here
+
+	if($_SERVER['REQUEST_METHOD'] == "POST")
+	{
+ 
+		if(isset($_FILES['file']['name']) && $_FILES['file']['name'] != "")
+		{
+ 
+			if($_FILES['file']['type'] == "image/jpeg")
+			{
+
+				$allowed_size = (1024 * 1024) * 7;
+				if($_FILES['file']['size'] < $allowed_size)
+				{
+					//everything is fine
+					$folder = "uploads/" . $user_data['stud_ID'] . "/";
+
+					//create folder
+					if(!file_exists($folder))
+					{
+
+						mkdir($folder,0777,true);
+					}
+
+				//	$image = new Image();
+
+					$filename = $folder . $image->generate_filename(15) . ".jpg";
+					move_uploaded_file($_FILES['file']['tmp_name'], $filename);
+
+					$change = "profile";
+
+						//check for mode
+						if(isset($_GET['change']))
+						{
+
+							$change = $_GET['change'];
+						}
+
+					
+
+					if($change == "cover")
+					{
+						if(file_exists($user_data['cover_image']))
+						{
+							unlink($user_data['cover_image']);
+						}
+						$image->resize_image($filename,$filename,1500,1500);
+					}else
+					{
+						if(file_exists($user_data['profile_image']))
+						{
+							unlink($user_data['profile_image']);
+						}
+						$image->resize_image($filename,$filename,1500,1500);
+					}
+
+					if(file_exists($filename))
+					{
+
+						$userid = $user_data['userid'];
+
+						if($change == "cover")
+						{
+							$query = "update users set cover_image = '$filename' where userid = '$userid' limit 1";
+							$_POST['is_cover_image'] = 1;
+
+						}else
+						{
+							$query = "update users set profile_image = '$filename' where userid = '$userid' limit 1";
+							$_POST['is_profile_image'] = 1;
+
+						}
+
+						$DB = new CONNECTION_DB();
+						$DB->save($query);
+
+
+						//create a post
+						$post = new Post();
+
+						$post->create_post($userid, $_POST,$filename);
+
+						header(("Location: profile.php"));
+						die;
+					}
+
+
+				}else
+				{
+
+          echo "<div class='error'>";
+          echo "The following errors occurred:<br><hr style='border: 1.5px solid black'>";
+					echo "Only images of size 3Mb or lower are allowed!";
+					echo "</div>";
+
+				}
+			}else
+			{
+
+        echo "<div class='error'>";
+        echo "The following errors occurred:<br><hr style='border: 1.5px solid black'>";
+				echo "Only images of Jpeg type are allowed!";
+				echo "</div>";
+
+			}
+
+		}else
+		{
+      echo "<div class='error'>";
+      echo "The following errors occurred:<br><hr style='border: 1.5px solid black'>";
+			echo "please add a valid image!";
+			echo "</div>";
+		}
+		
+	}
+
+?>
